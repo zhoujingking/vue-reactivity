@@ -1,13 +1,20 @@
 /*
-  previous version is one property version.
-  Here, we to for object which has multiple properties, and
-  each property has their own dep.
+  what if we have multiple reative objects that needs to track effects
 */
 
+// two reactive objects
 const product = {
   price: 5,
   quanity: 2
 };
+
+const user = {
+  firstName: 'Joe',
+  lastName: 'Smith'
+};
+
+// WeakMap whose keys must be object
+const targetMap = new WeakMap();
 
 const depsMap = new Map();
 
@@ -18,42 +25,42 @@ const effect = () => {
 };
 
 // save the effect into storage
-const track = (key) => {
-  let dep = depsMap.get(key);
+const track = (target, key) => {
+  let depMap = targetMap.get(target);
+  if (!depMap) {
+    // if no depMap, let's create one
+    targetMap.set(target, (depMap = new Map()));
+  }
+  
+  let dep = depMap.get(key);
   if (!dep) {
     // if no dep, let's create one
-    depsMap.set(key, (dep = new Set()));
+    depMap.set(key, (dep = new Set()));
   }
   dep.add(effect);
 };
 
 // to re-run the effect
-const trigger = (key) => {
-  const dep = depsMap.get(key);
-  if (dep) {
-    dep.forEach(effect => effect())
+const trigger = (target, key) => {
+  const depMap = targetMap.get(target);
+  if (depMap) {
+    const dep = depMap.get(key);
+    if (dep) {
+      dep.forEach(effect => effect())
+    }
   }
 };
 
-
-// const keyToTrack = 'quantity';
-// track(keyToTrack);
-// trigger(keyToTrack);
-// console.log(`total is ${total}`);
-
-// // if some dependency changes, re-run effect
-// product.price = 20;
-// trigger(keyToTrack);
-// console.log(`total is ${total}`);
-
 Object.keys(product).forEach(key => {
-  track(key);
-  trigger(key);
+  track(product, key);
+  trigger(product, key);
 });
 console.log(`total is ${total}`);
 product.quanity = 20;
-trigger('quanity');
+trigger(product, 'quanity');
 console.log(`total is ${total}`);
 product.price = 13;
-trigger('price');
+trigger(product, 'price');
 console.log(`total is ${total}`);
+
+// the same for user
