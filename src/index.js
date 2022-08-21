@@ -1,28 +1,10 @@
 /*
-  what if we have multiple reative objects that needs to track effects
+  How to call track and trigger reactively
 */
-
-// two reactive objects
-const product = {
-  price: 5,
-  quanity: 2
-};
-
-const user = {
-  firstName: 'Joe',
-  lastName: 'Smith'
-};
-
 // WeakMap whose keys must be object
 const targetMap = new WeakMap();
 
 const depsMap = new Map();
-
-let total = 0;
-
-const effect = () => {
-  total = product.price * product.quanity;
-};
 
 // save the effect into storage
 const track = (target, key) => {
@@ -51,16 +33,51 @@ const trigger = (target, key) => {
   }
 };
 
-Object.keys(product).forEach(key => {
-  track(product, key);
-  trigger(product, key);
+// define actions like vue3
+function reactive(obj) {
+  return new Proxy(obj, {
+    get(target, key, reciever) {
+      track(target, key);
+      return Reflect.get(target, key, reciever);
+    },
+    set(target, key, value, reciever) {    
+      const oldValue = target[key];
+      const success = Reflect.set(target, key, value, reciever);
+      if (oldValue !== value) {
+        trigger(target, key);
+      }
+      return success;
+    }
+  });
+}
+
+function ref(raw) {
+  return {
+    get value() {
+      track(this, 'value');
+      return raw;
+    },
+    set value(newVal) {
+      raw = newVal;
+      trigger(this, 'value')
+    }
+  }
+}
+
+const product = reactive({
+  price: 5,
+  quanity: 2
 });
-console.log(`total is ${total}`);
-product.quanity = 20;
-trigger(product, 'quanity');
-console.log(`total is ${total}`);
-product.price = 13;
-trigger(product, 'price');
+
+let total = 0;
+
+const effect = () => {
+  total = product.price * product.quanity;
+};
+
+effect();
 console.log(`total is ${total}`);
 
-// the same for user
+product.price = 10;
+console.log(`total is ${total}`);
+
