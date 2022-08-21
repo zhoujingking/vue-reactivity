@@ -1,10 +1,8 @@
-bad: we're calling track and trigger manually
+Problem:
+get(target, key, reciever) {
+    track(target, key);
+    return Reflect.get(target, key, reciever);
+},
 
-solution:
-When running an effect if product properties are accessed (GET),
-    then call track(product, <property>) -- save this effect
-
-If product properties are changed (SET)
-    then call trigger(product, <property>)
-
-How to intercept GET & SET
+every time it accesses its property, track is invoked even if 
+the property is not in effect().

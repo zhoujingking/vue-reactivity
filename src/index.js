@@ -1,25 +1,36 @@
 /*
   How to call track and trigger reactively
 */
+let activeEffect = null;
+
+// eff is type of Function
+function effect(eff) {
+  activeEffect = eff;
+  activeEffect();
+  activeEffect = null;
+}
+
 // WeakMap whose keys must be object
 const targetMap = new WeakMap();
-
 const depsMap = new Map();
 
 // save the effect into storage
 const track = (target, key) => {
-  let depMap = targetMap.get(target);
-  if (!depMap) {
-    // if no depMap, let's create one
-    targetMap.set(target, (depMap = new Map()));
-  }
-  
-  let dep = depMap.get(key);
-  if (!dep) {
-    // if no dep, let's create one
-    depMap.set(key, (dep = new Set()));
-  }
-  dep.add(effect);
+  if (activeEffect) {
+    console.log('track called')
+    let depMap = targetMap.get(target);
+    if (!depMap) {
+      // if no depMap, let's create one
+      targetMap.set(target, (depMap = new Map()));
+    }
+    
+    let dep = depMap.get(key);
+    if (!dep) {
+      // if no dep, let's create one
+      depMap.set(key, (dep = new Set()));
+    }
+    dep.add(activeEffect);
+  }   
 };
 
 // to re-run the effect
@@ -66,18 +77,20 @@ function ref(raw) {
 
 const product = reactive({
   price: 5,
-  quanity: 2
+  quanity: 2,
+  name: 'king'
 });
 
 let total = 0;
 
-const effect = () => {
-  total = product.price * product.quanity;
-};
-
-effect();
+effect(() => {
+  console.log('effect called')
+  total = product.quanity * product.price;
+});
 console.log(`total is ${total}`);
 
 product.price = 10;
 console.log(`total is ${total}`);
 
+// property `name` is not being tracked since it's not in effect callback
+product.name = 'changed';
