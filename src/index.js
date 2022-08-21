@@ -10,6 +10,12 @@ function effect(eff) {
   activeEffect = null;
 }
 
+function computed(getter) {
+  const result = ref();
+  effect(() => (result.value = getter()));
+  return result;
+}
+
 // WeakMap whose keys must be object
 const targetMap = new WeakMap();
 const depsMap = new Map();
@@ -81,16 +87,10 @@ const product = reactive({
   name: 'king'
 });
 
-let total = 0;
-
-effect(() => {
-  console.log('effect called')
-  total = product.quanity * product.price;
+const total = computed(() => {
+  return product.quanity * product.price;
 });
-console.log(`total is ${total}`);
+console.log(`total is ${total.value}`);
 
 product.price = 10;
-console.log(`total is ${total}`);
-
-// property `name` is not being tracked since it's not in effect callback
-product.name = 'changed';
+console.log(`total is ${total.value}`);
